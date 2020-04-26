@@ -102,8 +102,10 @@ class NFC {
     final stream = once ? _tagStream.take(1) : _tagStream;
     // Listen for tag reads.
     final subscription = stream.listen((message) {
+      print("(NIF) internal stream new data");
       controller.add(message);
     }, onError: (error) {
+      print("(NIF) internal stream error: $error");
       if (error is PlatformException) {
         switch (error.code) {
           case "NDEFUnsupportedFeatureError":
@@ -135,10 +137,12 @@ class NFC {
       controller.addError(error);
       controller.close();
     }, onDone: () {
+      print("(NIF) internal stream done");
       _tagStream = null;
       return controller.close();
     });
     controller.onCancel = () {
+      print("(NIF) public stream cancelled");
       subscription.cancel();
     };
 
@@ -196,6 +200,7 @@ class NFC {
         controller.close();
       }
     }, onError: (error) {
+      print("(NIF) internal write stream error: $error");
       controller.addError(error);
       controller.close();
     }, onDone: () {

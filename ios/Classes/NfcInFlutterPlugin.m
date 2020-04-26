@@ -121,6 +121,7 @@
 }
 
 - (FlutterError * _Nullable)onListenWithArguments:(id _Nullable)arguments eventSink:(nonnull FlutterEventSink)events {
+    NSLog(@"(NIF ios) subscribed to stream");
     self->events = events;
     return nil;
 }
@@ -130,6 +131,7 @@
 // However if it was not triggered by manuallyStopStream(), it should invalidate
 // the reader session if activate
 - (FlutterError * _Nullable)onCancelWithArguments:(id _Nullable)arguments {
+    NSLog(@"(NIF ios) unsubscribed from stream");
     if (session != nil) {
         if ([session isReady]) {
             [session invalidateSession];
@@ -435,6 +437,7 @@
 }
     
 - (void)startReading:(BOOL)once alertMessage:(NSString* _Nonnull)alertMessage {
+    NSLog(@"(NIF ios) started reading: once: %d", once);
     if (session == nil) {
         session = [[NFCNDEFReaderSession alloc]initWithDelegate:self queue:dispatchQueue invalidateAfterFirstRead: once];
         session.alertMessage = alertMessage;
@@ -523,6 +526,8 @@
         didDetectTags:(NSArray<__kindof id<NFCNDEFTag>> *)tags API_AVAILABLE(ios(13.0)) {
     [super readerSession:session didDetectTags:tags];
     
+    NSLog(@"(NIF ios) detected %lu tags", (unsigned long) tags.count);
+    
     // Set the last tags scanned
     lastTag = tags[[tags count] - 1];
 }
@@ -553,8 +558,10 @@
                 
                 // Write to the tag if possible
                 if (status == NFCNDEFStatusReadWrite) {
+                    NSLog(@"(NIF ios) writing NDEF");
                     [self->lastTag writeNDEF:ndefMessage completionHandler:^(NSError* _Nullable error) {
                         if (error != nil) {
+                            NSLog(@"(NIF ios) write NDEF error: %@ (%@)", error.localizedDescription, error.localizedFailureReason);
                             FlutterError *flutterError;
                             switch (error.code) {
                                 case NFCNdefReaderSessionErrorTagNotWritable:
@@ -575,6 +582,7 @@
                             }
                             completionHandler(flutterError);
                         } else {
+                            NSLog(@"(NIF ios) wrote NDEF message");
                             // Successfully wrote data to the tag
                             completionHandler(nil);
                         }

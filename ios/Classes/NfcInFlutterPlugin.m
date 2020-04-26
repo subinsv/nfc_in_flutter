@@ -70,57 +70,54 @@
     // startReading() is called.
     session = nil;
     
-    // If the event stream is closed we can't send the error
-    if (events == nil) {
-        return;
-    }
-    switch ([error code]) {
-        case NFCReaderSessionInvalidationErrorFirstNDEFTagRead:
-            // When this error is returned it doesn't need to be sent to the client
-            // as it cancels the stream after 1 read anyways
-            events(FlutterEndOfEventStream);
+    dispatch_async(dispatch_get_main_queue(), ^{
+        // If the event stream is closed we can't send the error
+        if (self->events == nil) {
             return;
-        case NFCReaderErrorUnsupportedFeature:
-            events([FlutterError
-                    errorWithCode:@"NDEFUnsupportedFeatureError"
-                    message:error.localizedDescription
-                    details:nil]);
-            break;
-        case NFCReaderSessionInvalidationErrorUserCanceled:
-            events([FlutterError
-                    errorWithCode:@"UserCanceledSessionError"
-                    message:error.localizedDescription
-                    details:nil]);
-            break;
-        case NFCReaderSessionInvalidationErrorSessionTimeout:
-            events([FlutterError
-                    errorWithCode:@"SessionTimeoutError"
-                    message:error.localizedDescription
-                    details:nil]);
-            break;
-        case NFCReaderSessionInvalidationErrorSessionTerminatedUnexpectedly:
-            events([FlutterError
-                    errorWithCode:@"SessionTerminatedUnexpectedlyError"
-                    message:error.localizedDescription
-                    details:nil]);
-            break;
-        case NFCReaderSessionInvalidationErrorSystemIsBusy:
-            events([FlutterError
-                    errorWithCode:@"SystemIsBusyError"
-                    message:error.localizedDescription
-                    details:nil]);
-            break;
-        default:
-            events([FlutterError
-                    errorWithCode:@"SessionError"
-                    message:error.localizedDescription
-                    details:nil]);
-    }
-    // Make sure to close the stream, otherwise bad things will happen.
-    // (onCancelWithArguments will never be called so the stream will
-    //  not be reset and will be stuck in a 'User Canceled' error loop)
-    events(FlutterEndOfEventStream);
-    return;
+        }
+        switch ([error code]) {
+            case NFCReaderSessionInvalidationErrorFirstNDEFTagRead:
+                // When this error is returned it doesn't need to be sent to the client
+                // as it cancels the stream after 1 read anyways
+                self->events(FlutterEndOfEventStream);
+                return;
+            case NFCReaderErrorUnsupportedFeature:
+                self->events([FlutterError
+                        errorWithCode:@"NDEFUnsupportedFeatureError"
+                        message:error.localizedDescription
+                        details:nil]);
+                break;
+            case NFCReaderSessionInvalidationErrorUserCanceled:
+                self->events([FlutterError
+                        errorWithCode:@"UserCanceledSessionError"
+                        message:error.localizedDescription
+                        details:nil]);
+                break;
+            case NFCReaderSessionInvalidationErrorSessionTimeout:
+                self->events([FlutterError
+                        errorWithCode:@"SessionTimeoutError"
+                        message:error.localizedDescription
+                        details:nil]);
+                break;
+            case NFCReaderSessionInvalidationErrorSessionTerminatedUnexpectedly:
+                self->events([FlutterError
+                        errorWithCode:@"SessionTerminatedUnexpectedlyError"
+                        message:error.localizedDescription
+                        details:nil]);
+                break;
+            case NFCReaderSessionInvalidationErrorSystemIsBusy:
+                self->events([FlutterError
+                        errorWithCode:@"SystemIsBusyError"
+                        message:error.localizedDescription
+                        details:nil]);
+                break;
+            default:
+                self->events([FlutterError
+                        errorWithCode:@"SessionError"
+                        message:error.localizedDescription
+                        details:nil]);
+        }
+    });
 }
 
 - (FlutterError * _Nullable)onListenWithArguments:(id _Nullable)arguments eventSink:(nonnull FlutterEventSink)events {

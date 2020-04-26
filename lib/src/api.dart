@@ -107,40 +107,33 @@ class NFC {
       if (error is PlatformException) {
         switch (error.code) {
           case "NDEFUnsupportedFeatureError":
-            controller.addError(NDEFReadingUnsupportedException());
-            controller.close();
-            return;
+            error = NDEFReadingUnsupportedException();
+            break;
           case "UserCanceledSessionError":
-            if (throwOnUserCancel)
-              controller.addError(NFCUserCanceledSessionException());
-            controller.close();
-            return;
-          case "SessionTimeoutError":
-            controller.addError(NFCSessionTimeoutException());
-            controller.close();
-            return;
-          case "SessionTerminatedUnexpectedlyErorr":
-            controller.addError(
-                NFCSessionTerminatedUnexpectedlyException(error.message));
-            controller.close();
-            return;
-          case "SystemIsBusyError":
-            controller.addError(NFCSystemIsBusyException(error.message));
-            controller.close();
-            return;
-          case "IOError":
-            controller.addError(NFCIOException(error.message));
-            if (error.details != null) {
-              assert(error.details is Map);
-              if (error.details["fatal"] == true) controller.close();
+            error = NFCUserCanceledSessionException();
+            if (!throwOnUserCancel) {
+              return;
             }
-            return;
+            break;
+          case "SessionTimeoutError":
+            error = NFCSessionTimeoutException();
+            break;
+          case "SessionTerminatedUnexpectedlyErorr":
+            error = NFCSessionTerminatedUnexpectedlyException(error.message);
+            break;
+          case "SystemIsBusyError":
+            error = NFCSystemIsBusyException(error.message);
+            break;
+          case "IOError":
+            error = NFCIOException(error.message);
+            break;
           case "NDEFBadFormatError":
-            controller.addError(NDEFBadFormatException(error.message));
-            return;
+            error = NDEFBadFormatException(error.message);
+            break;
         }
       }
       controller.addError(error);
+      controller.close();
     }, onDone: () {
       _tagStream = null;
       return controller.close();
@@ -202,6 +195,9 @@ class NFC {
       if (once && writes > 0) {
         controller.close();
       }
+    }, onError: (error) {
+      controller.addError(error);
+      controller.close();
     }, onDone: () {
       _tagStream = null;
       return controller.close();

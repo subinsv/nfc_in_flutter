@@ -162,6 +162,7 @@ class NFC {
 
     /// readerMode specifies which mode the reader should use.
     NFCReaderMode readerMode = const NFCNormalReaderMode(),
+    bool markReadOnly = false,
   }) {
     if (_tagStream == null) {
       _createTagStream();
@@ -175,7 +176,7 @@ class NFC {
         NDEFMessage message = msg;
         if (message.tag.writable) {
           try {
-            await message.tag.write(newMessage);
+            await message.tag.write(newMessage, markReadOnly);
           } catch (err) {
             controller.addError(err);
             controller.close();
@@ -497,7 +498,7 @@ class NDEFTag implements NFCTag {
         id = map["id"],
         writable = map["writable"];
 
-  Future write(NDEFMessage message) async {
+  Future write(NDEFMessage message, bool makeReadOnly) async {
     if (!writable) {
       throw NFCTagUnwritableException();
     }
@@ -505,6 +506,7 @@ class NDEFTag implements NFCTag {
       return NFC._channel.invokeMethod("writeNDEF", {
         "id": id,
         "message": message._toMap(),
+        "make_read_only": makeReadOnly,
       });
     } on PlatformException catch (e) {
       switch (e.code) {

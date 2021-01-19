@@ -4,7 +4,7 @@
 @protocol NFCWrapper <FlutterStreamHandler>
 - (void)startReading:(BOOL)once alertMessage:(NSString* _Nonnull)alertMessage;
 - (BOOL)isEnabled;
-- (void)writeToTag:(NSDictionary* _Nonnull)data completionHandler:(void (^_Nonnull) (FlutterError * _Nullable error))completionHandler;
+- (void)writeToTag:(NSDictionary* _Nonnull)data makeReadOnly:(BOOL)makeReadOnly completionHandler:(void (^_Nonnull) (FlutterError * _Nullable error))completionHandler;
 @end
 
 

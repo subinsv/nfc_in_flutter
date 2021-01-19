@@ -50,7 +50,7 @@
         result(nil);
     } else if ([@"writeNDEF" isEqualToString:call.method]) {
         NSDictionary* args = call.arguments;
-        [wrapper writeToTag:args completionHandler:^(FlutterError * _Nullable error) {
+        [wrapper writeToTag:args makeReadOnly:[args[@"make_read_only"] boolValue] completionHandler:^(FlutterError * _Nullable error) {
             result(error);
         }];
     } else {
@@ -508,7 +508,7 @@
 
 - (void)readerSessionDidBecomeActive:(NFCNDEFReaderSession *)session API_AVAILABLE(ios(13.0)) {}
 
-- (void)writeToTag:(NSDictionary*)data completionHandler:(void (^_Nonnull) (FlutterError * _Nullable error))completionHandler {
+- (void)writeToTag:(NSDictionary*)data makeReadOnly:(BOOL)makeReadOnly completionHandler:(void (^_Nonnull) (FlutterError * _Nullable error))completionHandler {
     completionHandler(nil);
 }
 
@@ -526,7 +526,7 @@
     lastTag = tags[[tags count] - 1];
 }
 
-- (void)writeToTag:(NSDictionary*)data completionHandler:(void (^_Nonnull) (FlutterError * _Nullable error))completionHandler {
+- (void)writeToTag:(NSDictionary*)data makeReadOnly:(BOOL)makeReadOnly completionHandler:(void (^_Nonnull) (FlutterError * _Nullable error))completionHandler {
     NFCNDEFMessage* ndefMessage = [self formatNDEFMessageWithDictionary:data];
     
     if (lastTag != nil) {
@@ -578,7 +578,18 @@
                             completionHandler(flutterError);
                         } else {
                             // Successfully wrote data to the tag
-                            completionHandler(nil);
+                            if(makeReadOnly) {
+                                [self->lastTag writeLockWithCompletionHandler:^(NSError* _Nullable error) {
+                                    if (error != nil) {
+                                        completionHandler([FlutterError errorWithCode:@"NFCUnexpectedError" message:@"Unable to lock NFC tag" details:nil]);
+                                    } else {
+                                        completionHandler(nil);
+                                    }
+                                }];
+                            } else {
+                                completionHandler(nil);
+                            }
+                            
                         }
                     }];
                 } else {
@@ -615,7 +626,7 @@
     return nil;
 }
 
-- (void)writeToTag:(NSDictionary*)data completionHandler:(void (^_Nonnull) (FlutterError * _Nullable error))completionHandler {
+- (void)writeToTag:(NSDictionary*)data makeReadOnly:(BOOL)makeReadOnly completionHandler:(void (^_Nonnull) (FlutterError * _Nullable error))completionHandler {
     completionHandler([FlutterError
                        errorWithCode:@"NFCWritingUnsupportedFeatureError"
                        message:nil
